@@ -20,6 +20,10 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Install libudev
+        # elf2uf2-rs links libudev for its --deploy support
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
+
       - name: Install elf2uf2-rs
         run: cargo install elf2uf2-rs --locked --version 2.2.0 --target x86_64-unknown-linux-gnu
 
