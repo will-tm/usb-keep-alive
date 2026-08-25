@@ -21,7 +21,7 @@ jobs:
           - chip: rp2350
             target: thumbv8m.main-none-eabihf
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Rust target
         run: rustup target add ${{ matrix.target }}
@@ -42,7 +42,7 @@ jobs:
       - name: Build UF2
         run: ./tools/mkuf2.sh ${{ matrix.chip }} dist/usb-keep-alive-${{ matrix.chip }}.uf2
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: usb-keep-alive-${{ matrix.chip }}
           path: dist/usb-keep-alive-${{ matrix.chip }}.uf2

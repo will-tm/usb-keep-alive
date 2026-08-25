@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Rust targets
         run: rustup target add thumbv6m-none-eabi thumbv8m.main-none-eabihf
