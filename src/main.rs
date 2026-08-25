@@ -7,6 +7,7 @@ use defmt::*;
 use embassy_executor::Spawner;
 use embassy_futures::join::join;
 use embassy_rp::bind_interrupts;
+#[cfg(feature = "rp2040")]
 use embassy_rp::flash::{Blocking, Flash};
 use embassy_rp::peripherals::USB;
 use embassy_rp::usb::Driver;
@@ -56,10 +57,17 @@ impl Handler for DeviceHandler {
 async fn main(_spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
 
-    // Read the unique flash ID for the serial number
-    let mut flash = Flash::<_, Blocking, { 2 * 1024 * 1024 }>::new_blocking(p.FLASH);
-    let mut uid = [0u8; 8];
-    flash.blocking_unique_id(&mut uid).unwrap();
+    // Unique 8-byte ID for the serial number: SPI flash UID on RP2040,
+    // OTP chip ID on RP2350 (which has no flash UID accessor).
+    #[cfg(feature = "rp2040")]
+    let uid = {
+        let mut flash = Flash::<_, Blocking, { 2 * 1024 * 1024 }>::new_blocking(p.FLASH);
+        let mut uid = [0u8; 8];
+        flash.blocking_unique_id(&mut uid).unwrap();
+        uid
+    };
+    #[cfg(feature = "rp2350")]
+    let uid = embassy_rp::otp::get_chipid().unwrap().to_be_bytes();
 
     static SERIAL_BUF: StaticCell<[u8; 16]> = StaticCell::new();
     let serial_buf = SERIAL_BUF.init([0u8; 16]);

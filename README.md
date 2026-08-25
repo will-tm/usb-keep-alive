@@ -1,39 +1,58 @@
-# USB Keep Alive (Rust / Embassy)
+# USB Keep Alive
 
-USB HID mouse emulator for Raspberry Pi Pico (RP2040) that sends imperceptible cursor movements every 10 seconds to prevent the host from sleeping.
+USB HID mouse firmware for the Raspberry Pi Pico that nudges the cursor one
+pixel every 10 seconds, keeping the host from going to sleep. Written in Rust
+with [Embassy](https://embassy.dev).
 
-Rust port of the C/TinyUSB version in `../usb-keep-alive/`.
+Supports **RP2040** (Pico) and **RP2350** (Pico 2).
 
-## Building
+## Build
 
-```sh
-cargo run --release
-```
+Prebuilt UF2s are attached to each [release](https://github.com/will-tm/usb-keep-alive/releases).
 
-This builds the ELF and produces a UF2 at:
-`target/thumbv6m-none-eabi/release/usb-keep-alive-rust.uf2`
-
-Install the runner if needed: `cargo install elf2uf2-rs`
-
-## Flashing
-
-Hold **BOOTSEL** on the Pico and plug it in, then copy the UF2:
+To build them yourself you need [`elf2uf2-rs`](https://crates.io/crates/elf2uf2-rs):
 
 ```sh
-cp target/thumbv6m-none-eabi/release/usb-keep-alive-rust.uf2 /Volumes/RPI-RP2/
+cargo install elf2uf2-rs
+tools/mkuf2.sh rp2040 dist/usb-keep-alive-rp2040.uf2
+tools/mkuf2.sh rp2350 dist/usb-keep-alive-rp2350.uf2
 ```
 
-## LED Blink Patterns
+`cargo build --release` on its own targets the RP2040. For the RP2350:
 
-| Pattern | State |
-|---------|-------|
-| Fast blink (250ms) | Not mounted — waiting for USB host |
-| Slow blink (1000ms) | Mounted — keep-alive active |
-| Very slow blink (2500ms) | Suspended by host |
+```sh
+cargo build --release --target thumbv8m.main-none-eabihf \
+    --no-default-features --features rp2350
+```
 
-## USB Device Info
+Prefer `tools/mkuf2.sh` for anything you intend to flash: `elf2uf2-rs` stamps
+every image with the RP2040 family ID, and the RP2350 boot ROM rejects that,
+so the script corrects it.
 
-- VID: `0x1506`, PID: `0x4004`
-- Manufacturer: `will_tm`
-- Product: `USB Keep Alive`
-- Serial: unique flash ID (hex)
+## Flash
+
+Hold **BOOTSEL** while plugging the board in, then copy the UF2 to the drive
+it mounts as:
+
+```sh
+cp dist/usb-keep-alive-rp2040.uf2 /Volumes/RPI-RP2/   # Pico
+cp dist/usb-keep-alive-rp2350.uf2 /Volumes/RP2350/    # Pico 2
+```
+
+The board reboots and starts running immediately.
+
+## USB device
+
+- VID `0x1506`, PID `0x4004`
+- Manufacturer `will_tm`, product `USB Keep Alive`
+- Serial: unique 8-byte chip ID as hex — SPI flash UID on RP2040, OTP chip ID
+  on RP2350
+
+## Layout
+
+| Path | |
+|---|---|
+| `src/main.rs` | firmware |
+| `memory-rp2040.x`, `memory-rp2350.x` | per-chip linker layouts, selected by `build.rs` |
+| `tools/mkuf2.sh` | build a flashable UF2 |
+| `tools/uf2_family.py` | rewrite/verify a UF2 family ID |

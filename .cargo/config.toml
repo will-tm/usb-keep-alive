@@ -1,5 +1,11 @@
+# Default build is RP2040 (`cargo build --release`).
+# For RP2350: cargo build --release --target thumbv8m.main-none-eabihf \
+#                 --no-default-features --features rp2350
+#
+# Use tools/mkuf2.sh to produce a flashable UF2 for either chip -- elf2uf2-rs
+# alone stamps the wrong family ID for RP2350.
 [target.thumbv6m-none-eabi]
-runner = "elf2uf2-rs"
+runner = "elf2uf2-rs -d"
 
 [build]
 target = "thumbv6m-none-eabi"
